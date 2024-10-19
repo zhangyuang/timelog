@@ -1,48 +1,48 @@
+//! # Timer
+//!
+//! `Timer` is a Rust library for timing and logging time durations.
+//!
+//! ## Features
+//!
+//! - Create multiple named timers
+//! - Start and stop timers
+//! - Log elapsed time without stopping the timer
+//! - Silent mode for logging without printing
+//! - Convert durations to milliseconds
+//! - End timers and get elapsed time
+//! - Singleton instance for global timing
+//!
+//! ## Usage
+//!
+//! Create a new `Timer` instance, start timers with labels, and log or stop them as needed.
+//! The library provides a simple and efficient way to measure execution time in your Rust programs.
+//!
+//! ## Example
+//!
+//! ```
+//! let mut timer = Timer::new();
+//! timer.time("operation");
+//! // Perform some operation
+//! let elapsed = timer.time_log("operation", false);
+//! println!("Operation took {} ms", elapsed);
+//! 
+//! // End a timer
+//! let final_time = timer.time_end("operation");
+//! println!("Final time: {} ms", final_time);
+//!
+//! // Use singleton instance
+//! Timer::single_instance().time("global_operation");
+//! // Perform global operation
+//! Timer::single_instance().time_end("global_operation");
+//! ```
+//!
+//! This library is useful for performance monitoring and optimization in Rust applications.
+//! The `time_end` method allows you to stop a timer and get its final elapsed time.
+//! The `single_instance` feature provides a global Timer instance for convenient timing across your application.
+
 use std::collections::HashMap;
 use std::time::{ Instant, Duration };
 use std::sync::Once;
-/// # Timer
-///
-/// `Timer` is a Rust library for timing and logging time durations.
-///
-/// ## Features
-///
-/// - Create multiple named timers
-/// - Start and stop timers
-/// - Log elapsed time without stopping the timer
-/// - Silent mode for logging without printing
-/// - Convert durations to milliseconds
-/// - End timers and get elapsed time
-/// - Singleton instance for global timing
-///
-/// ## Usage
-///
-/// Create a new `Timer` instance, start timers with labels, and log or stop them as needed.
-/// The library provides a simple and efficient way to measure execution time in your Rust programs.
-///
-/// ## Example
-///
-/// ```
-/// let mut timer = Timer::new();
-/// timer.time("operation");
-/// // Perform some operation
-/// let elapsed = timer.time_log("operation", false);
-/// println!("Operation took {} ms", elapsed);
-/// 
-/// // End a timer
-/// let final_time = timer.time_end("operation");
-/// println!("Final time: {} ms", final_time);
-///
-/// // Use singleton instance
-/// Timer::single_instance().time("global_operation");
-/// // Perform global operation
-/// Timer::single_instance().time_end("global_operation");
-/// ```
-///
-/// This library is useful for performance monitoring and optimization in Rust applications.
-/// The `time_end` method allows you to stop a timer and get its final elapsed time.
-/// The `single_instance` feature provides a global Timer instance for convenient timing across your application.
-
 
 /// A struct for timing and logging time durations.
 ///
