@@ -1,5 +1,48 @@
 use std::collections::HashMap;
-use std::time::{Instant, Duration};
+use std::time::{ Instant, Duration };
+use std::sync::Once;
+/// # Timer
+///
+/// `Timer` is a Rust library for timing and logging time durations.
+///
+/// ## Features
+///
+/// - Create multiple named timers
+/// - Start and stop timers
+/// - Log elapsed time without stopping the timer
+/// - Silent mode for logging without printing
+/// - Convert durations to milliseconds
+/// - End timers and get elapsed time
+/// - Singleton instance for global timing
+///
+/// ## Usage
+///
+/// Create a new `Timer` instance, start timers with labels, and log or stop them as needed.
+/// The library provides a simple and efficient way to measure execution time in your Rust programs.
+///
+/// ## Example
+///
+/// ```
+/// let mut timer = Timer::new();
+/// timer.time("operation");
+/// // Perform some operation
+/// let elapsed = timer.time_log("operation", false);
+/// println!("Operation took {} ms", elapsed);
+/// 
+/// // End a timer
+/// let final_time = timer.time_end("operation");
+/// println!("Final time: {} ms", final_time);
+///
+/// // Use singleton instance
+/// Timer::single_instance().time("global_operation");
+/// // Perform global operation
+/// Timer::single_instance().time_end("global_operation");
+/// ```
+///
+/// This library is useful for performance monitoring and optimization in Rust applications.
+/// The `time_end` method allows you to stop a timer and get its final elapsed time.
+/// The `single_instance` feature provides a global Timer instance for convenient timing across your application.
+
 
 /// A struct for timing and logging time durations.
 ///
@@ -78,6 +121,29 @@ impl Timer {
         }
     }
 
+    /// Returns a global singleton instance of Timer
+    ///
+    /// This method implements the singleton pattern to ensure only one Timer instance
+    /// exists throughout the program. It's thread-safe and lazily initialized.
+    ///
+    /// # Returns
+    ///
+    /// A static mutable reference to the global Timer instance
+    ///
+    /// # Safety
+    ///
+    /// This function uses an unsafe block because it manipulates static mutable variables.
+    /// However, thread safety is guaranteed by using Once to ensure initialization happens only once.
+    pub fn single_instance() -> &'static mut Timer {
+        static ONCE: Once = Once::new();
+        static mut SINGLETON: Option<Timer> = None;
+        unsafe {
+            ONCE.call_once(|| {
+                SINGLETON = Some(self::Timer::new());
+            });
+            SINGLETON.as_mut().unwrap()
+        }
+    }
     /// Converts a Duration to milliseconds.
     ///
     /// # Arguments
@@ -88,7 +154,7 @@ impl Timer {
     ///
     /// Returns the converted milliseconds as a floating-point number.
     fn duration_to_ms(duration: Duration) -> f64 {
-        duration.as_secs() as f64 * 1000.0 + duration.subsec_nanos() as f64 / 1_000_000.0
+        (duration.as_secs() as f64) * 1000.0 + (duration.subsec_nanos() as f64) / 1_000_000.0
     }
 }
 
