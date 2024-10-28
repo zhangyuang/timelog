@@ -25,7 +25,7 @@
 //! // Perform some operation
 //! let elapsed = timer.time_log("operation", false);
 //! println!("Operation took {} ms", elapsed);
-//! 
+//!
 //! // End a timer
 //! let final_time = timer.time_end("operation");
 //! println!("Final time: {} ms", final_time);
@@ -41,15 +41,25 @@
 //! The `single_instance` feature provides a global Timer instance for convenient timing across your application.
 
 use std::collections::HashMap;
-use std::time::{ Instant, Duration };
 use std::sync::Once;
+#[cfg(not(target_arch = "wasm32"))]
+use std::time::{Duration, Instant};
+#[cfg(target_arch = "wasm32")]
+use wasm_bindgen::prelude::*;
+#[cfg(target_arch = "wasm32")]
+use web_sys::{window, Performance};
 
 /// A struct for timing and logging time durations.
 ///
 /// `Timer` uses a `HashMap` to store multiple named timers, each associated with a label.
 pub struct Timer {
     /// HashMap storing timers, where keys are labels and values are start times.
+    #[cfg(not(target_arch = "wasm32"))]
     timers: HashMap<String, Instant>,
+    #[cfg(target_arch = "wasm32")]
+    timers: HashMap<String, f64>,
+    #[cfg(target_arch = "wasm32")]
+    performance: Performance,
 }
 
 impl Timer {
@@ -59,9 +69,16 @@ impl Timer {
     ///
     /// Returns a new `Timer` instance with an empty timer HashMap.
     pub fn new() -> Self {
-        Timer {
+        #[cfg(not(target_arch = "wasm32"))]
+        return Timer {
             timers: HashMap::new(),
-        }
+        };
+
+        #[cfg(target_arch = "wasm32")]
+        return Timer {
+            timers: HashMap::new(),
+            performance: window().unwrap().performance().unwrap(),
+        };
     }
 
     /// Starts a new timer.
@@ -70,7 +87,12 @@ impl Timer {
     ///
     /// * `label` - The label for the timer.
     pub fn time(&mut self, label: &str) {
+        #[cfg(not(target_arch = "wasm32"))]
         self.timers.insert(label.to_string(), Instant::now());
+
+        #[cfg(target_arch = "wasm32")]
+        self.timers
+            .insert(label.to_string(), self.performance.now());
     }
 
     /// Logs and prints the current time of a timer without stopping it.
@@ -84,6 +106,7 @@ impl Timer {
     ///
     /// Returns the number of milliseconds the timer has been running, or 0.0 if the timer doesn't exist.
     pub fn time_log(&self, label: &str, silent: bool) -> f64 {
+        #[cfg(not(target_arch = "wasm32"))]
         if let Some(start_time) = self.timers.get(label) {
             let duration = start_time.elapsed();
             let ms = Self::duration_to_ms(duration);
@@ -93,6 +116,18 @@ impl Timer {
             ms
         } else {
             eprintln!("Timer '{}' does not exist", label);
+            0.0
+        }
+
+        #[cfg(target_arch = "wasm32")]
+        if let Some(start_time) = self.timers.get(label) {
+            let ms = self.performance.now() - start_time;
+            if !silent {
+                web_sys::console::log_1(&format!("{}: {:.3}ms", label, ms).into());
+            }
+            ms
+        } else {
+            web_sys::console::error_1(&format!("Timer '{}' does not exist", label).into());
             0.0
         }
     }
@@ -108,6 +143,7 @@ impl Timer {
     ///
     /// Returns the number of milliseconds the timer has been running, or 0.0 if the timer doesn't exist.
     pub fn time_end(&mut self, label: &str, silent: bool) -> f64 {
+        #[cfg(not(target_arch = "wasm32"))]
         if let Some(start_time) = self.timers.remove(label) {
             let duration = start_time.elapsed();
             let ms = Self::duration_to_ms(duration);
@@ -117,6 +153,18 @@ impl Timer {
             ms
         } else {
             eprintln!("Timer '{}' does not exist", label);
+            0.0
+        }
+
+        #[cfg(target_arch = "wasm32")]
+        if let Some(start_time) = self.timers.remove(label) {
+            let ms = self.performance.now() - start_time;
+            if !silent {
+                web_sys::console::log_1(&format!("{}: {:.3}ms", label, ms).into());
+            }
+            ms
+        } else {
+            web_sys::console::error_1(&format!("Timer '{}' does not exist", label).into());
             0.0
         }
     }
@@ -144,6 +192,7 @@ impl Timer {
             SINGLETON.as_mut().unwrap()
         }
     }
+
     /// Converts a Duration to milliseconds.
     ///
     /// # Arguments
@@ -153,6 +202,7 @@ impl Timer {
     /// # Returns
     ///
     /// Returns the converted milliseconds as a floating-point number.
+    #[cfg(not(target_arch = "wasm32"))]
     fn duration_to_ms(duration: Duration) -> f64 {
         (duration.as_secs() as f64) * 1000.0 + (duration.subsec_nanos() as f64) / 1_000_000.0
     }
@@ -174,7 +224,9 @@ impl Default for Timer {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[cfg(not(target_arch = "wasm32"))]
     use std::thread::sleep;
+    #[cfg(not(target_arch = "wasm32"))]
     use std::time::Duration;
 
     /// Tests Timer::new() and Timer::default()
@@ -194,6 +246,7 @@ mod tests {
 
     /// Tests Timer::time_log() method
     #[test]
+    #[cfg(not(target_arch = "wasm32"))]
     fn test_timer_time_log() {
         let mut timer = Timer::new();
         timer.time("test_time_log");
@@ -204,6 +257,7 @@ mod tests {
 
     /// Tests Timer::time_end() method
     #[test]
+    #[cfg(not(target_arch = "wasm32"))]
     fn test_timer_time_end() {
         let mut timer = Timer::new();
         timer.time("test_time_end");
@@ -214,6 +268,7 @@ mod tests {
 
     /// Tests Timer::duration_to_ms() method
     #[test]
+    #[cfg(not(target_arch = "wasm32"))]
     fn test_duration_to_ms() {
         let duration = Duration::from_millis(1234);
         assert_eq!(Timer::duration_to_ms(duration), 1234.0);

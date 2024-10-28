@@ -7,3 +7,5 @@ documentation = "https://docs.rs/timelog"
 description = "A simple timer for logging time durations like console.time in JavaScript."
 license = "MIT"
 
+[dependencies]
+wasm-bindgen = "0.2"
