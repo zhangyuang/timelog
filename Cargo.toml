@@ -8,4 +8,5 @@ description = "A simple timer for logging time durations like console.time in Ja
 license = "MIT"
 
 [dependencies]
-wasm-bindgen = "0.2"
+wasm-bindgen = "0.2.95"
+web-sys = "0.3.72"
