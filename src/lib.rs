@@ -44,9 +44,9 @@ use std::collections::HashMap;
 use std::sync::Once;
 #[cfg(not(target_arch = "wasm32"))]
 use std::time::{Duration, Instant};
-#[cfg(target_arch = "wasm32")]
+#[cfg(all(target_arch = "wasm32", not(feature = "webworker")))]
 use wasm_bindgen::prelude::*;
-#[cfg(target_arch = "wasm32")]
+#[cfg(all(target_arch = "wasm32", not(feature = "webworker")))]
 use web_sys::{window, Performance};
 
 /// A struct for timing and logging time durations.
@@ -56,9 +56,9 @@ pub struct Timer {
     /// HashMap storing timers, where keys are labels and values are start times.
     #[cfg(not(target_arch = "wasm32"))]
     timers: HashMap<String, Instant>,
-    #[cfg(target_arch = "wasm32")]
+    #[cfg(all(target_arch = "wasm32", not(feature = "webworker")))]
     timers: HashMap<String, f64>,
-    #[cfg(target_arch = "wasm32")]
+    #[cfg(all(target_arch = "wasm32", not(feature = "webworker")))]
     performance: Performance,
 }
 
@@ -74,10 +74,15 @@ impl Timer {
             timers: HashMap::new(),
         };
 
-        #[cfg(target_arch = "wasm32")]
+        #[cfg(all(target_arch = "wasm32", not(feature = "webworker")))]
         return Timer {
             timers: HashMap::new(),
             performance: window().unwrap().performance().unwrap(),
+        };
+
+        #[cfg(all(target_arch = "wasm32", feature = "webworker"))]
+        return Timer {
+            timers: HashMap::new(),
         };
     }
 
@@ -90,7 +95,7 @@ impl Timer {
         #[cfg(not(target_arch = "wasm32"))]
         self.timers.insert(label.to_string(), Instant::now());
 
-        #[cfg(target_arch = "wasm32")]
+        #[cfg(all(target_arch = "wasm32", not(feature = "webworker")))]
         self.timers
             .insert(label.to_string(), self.performance.now());
     }
@@ -119,7 +124,7 @@ impl Timer {
             0.0
         }
 
-        #[cfg(target_arch = "wasm32")]
+        #[cfg(all(target_arch = "wasm32", not(feature = "webworker")))]
         if let Some(start_time) = self.timers.get(label) {
             let ms = self.performance.now() - start_time;
             if !silent {
@@ -130,6 +135,9 @@ impl Timer {
             web_sys::console::error_1(&format!("Timer '{}' does not exist", label).into());
             0.0
         }
+
+        #[cfg(all(target_arch = "wasm32", feature = "webworker"))]
+        0.0
     }
 
     /// Ends a timer and prints its runtime.
@@ -156,7 +164,7 @@ impl Timer {
             0.0
         }
 
-        #[cfg(target_arch = "wasm32")]
+        #[cfg(all(target_arch = "wasm32", not(feature = "webworker")))]
         if let Some(start_time) = self.timers.remove(label) {
             let ms = self.performance.now() - start_time;
             if !silent {
@@ -167,6 +175,9 @@ impl Timer {
             web_sys::console::error_1(&format!("Timer '{}' does not exist", label).into());
             0.0
         }
+
+        #[cfg(all(target_arch = "wasm32", feature = "webworker"))]
+        0.0
     }
 
     /// Returns a global singleton instance of Timer
